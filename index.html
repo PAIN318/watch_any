@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineVault | Premium Search</title>
+    <style>
+        :root {
+            --primary: #f5c518;
+            --bg: #000000;
+            --card-bg: #111111;
+            --text: #ffffff;
+        }
+
+        /* --- THE FULLY BUILT CURSOR ANIMATION --- */
+        #cursorFollower, #cursorFollowerDot {
+            position: fixed;
+            top: 0;
+            left: 0;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            mix-blend-mode: difference;
+            transition: width 0.3s, height 0.3s, background-color 0.3s, border-color 0.3s;
+        }
+
+        /* The Outer Ring */
+        #cursorFollower {
+            width: 40px;
+            height: 40px;
+            border: 2px solid white;
+            background-color: transparent;
+        }
+
+        /* The Small Inner Dot */
+        #cursorFollowerDot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--primary);
+        }
+
+        /* State when hovering over buttons/inputs */
+        .cursor-active #cursorFollower {
+            width: 60px;
+            height: 60px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: var(--primary);
+        }
+
+        /* Hide default cursor */
+        html, body {
+            cursor: none;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* --- WEBSITE LAYOUT --- */
+        header {
+            height: 40vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 4rem;
+            letter-spacing: 10px;
+            text-transform: uppercase;
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+
+        .search-bar {
+            display: flex;
+            background: #222;
+            padding: 5px;
+            border-radius: 50px;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 15px 25px;
+            color: white;
+            font-size: 1.1rem;
+            outline: none;
+            cursor: none;
+        }
+
+        button.search-btn {
+            background: var(--primary);
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: bold;
+            cursor: none;
+            transition: 0.3s;
+        }
+
+        #movie-result {
+            display: none;
+            max-width: 900px;
+            margin: 0 auto 100px auto;
+            background: var(--card-bg);
+            border-radius: 30px;
+            overflow: hidden;
+            border: 1px solid #333;
+        }
+
+        .flex-box { display: flex; }
+        .poster { width: 350px; min-width: 350px; }
+        .poster img { width: 100%; height: 100%; object-fit: cover; }
+        .content { padding: 50px; }
+
+        .watch-now {
+            display: inline-block;
+            margin-top: 30px;
+            background: white;
+            color: black;
+            padding: 18px 40px;
+            border-radius: 10px;
+            font-weight: 900;
+            text-decoration: none;
+            cursor: none;
+            transition: 0.3s;
+        }
+
+        @media (max-width: 768px) {
+            .flex-box { flex-direction: column; }
+            .poster { width: 100%; height: 300px; }
+            #cursorFollower, #cursorFollowerDot { display: none; }
+            body { cursor: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="cursorFollower"></div>
+    <div id="cursorFollowerDot"></div>
+
+    <header>
+        <h1>CineVault</h1>
+        <div class="search-bar">
+            <input type="text" id="movieTitle" placeholder="Search Movie...">
+            <button class="search-btn" onclick="getMovie()">SEARCH</button>
+        </div>
+    </header>
+
+    <div id="movie-result">
+        <div class="flex-box">
+            <div class="poster">
+                <img id="mPoster" src="" alt="">
+            </div>
+            <div class="content">
+                <h2 id="mName" style="font-size: 2.5rem; margin-top: 0;"></h2>
+                <p id="mPlot" style="line-height: 1.8; color: #aaa;"></p>
+                <button id="masterBtn" class="watch-now">CLICK HERE TO WATCH</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* --- CURSOR LOGIC (As seen in your screenshot) --- */
+        const follower = document.getElementById('cursorFollower');
+        const dot = document.getElementById('cursorFollowerDot');
+
+        let mouseX = 0, mouseY = 0; // Current mouse position
+        let ringX = 0, ringY = 0;   // Lagging ring position
+
+        // Track mouse movement
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+
+            // Small dot follows instantly
+            dot.style.left = mouseX + 'px';
+            dot.style.top = mouseY + 'px';
+        });
+
+        // Smooth Lerp loop for the Ring
+        function render() {
+            // Formula: Current position + (Target - Current) * Ease
+            ringX += (mouseX - ringX) * 0.15;
+            ringY += (mouseY - ringY) * 0.15;
+
+            follower.style.left = ringX + 'px';
+            follower.style.top = ringY + 'px';
+
+            requestAnimationFrame(render);
+        }
+        render();
+
+        // ADD HOVER EFFECT: Grows when touching buttons
+        const interactables = document.querySelectorAll('button, input, .watch-now');
+        interactables.forEach(item => {
+            item.addEventListener('mouseenter', () => document.body.classList.add('cursor-active'));
+            item.addEventListener('mouseleave', () => document.body.classList.remove('cursor-active'));
+        });
+
+        /* --- MOVIE LOGIC --- */
+        const KEY = '4795c984';
+        let currentID = '';
+
+        async function getMovie() {
+            const val = document.getElementById('movieTitle').value;
+            if (!val) return;
+
+            const res = await fetch(`https://www.omdbapi.com/?t=${val}&apikey=${KEY}`);
+            const data = await res.json();
+
+            if (data.Response === "True") {
+                currentID = data.imdbID;
+                document.getElementById('mName').innerText = data.Title;
+                document.getElementById('mPlot').innerText = data.Plot;
+                document.getElementById('mPoster').src = data.Poster;
+                document.getElementById('movie-result').style.display = 'block';
+            } else {
+                alert("Movie not found!");
+            }
+        }
+
+        /* --- REDIRECT LOGIC --- */
+        document.getElementById('masterBtn').addEventListener('click', () => {
+            if (!currentID) return;
+            // 1. PlayIMDb
+            window.open(`https://playimdb.com/title/${currentID}`, '_blank');
+            // 2. StreamIMDb
+            setTimeout(() => {
+                window.open(`https://streamimdb.me/embed/${currentID}`, '_blank');
+            }, 400);
+        });
+    </script>
+</body>
+</html>
