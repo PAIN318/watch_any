@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineVault | Matte Black Edition</title>
+    <style>
+        :root {
+            --primary: #f5c518; /* IMDb Yellow */
+            --bg: #121212;      /* Matte Black Background */
+            --card-bg: #1a1a1a; /* Slightly lighter for depth */
+            --text: #ffffff;
+            --accent: #ff4b2b;
+        }
+
+        /* --- THE CURSOR ANIMATION (From your Screenshot) --- */
+        * {
+            cursor: none !important; /* Hides system cursor */
+        }
+
+        .cursorFollower, .cursorFollowerDot {
+            position: fixed;
+            top: 0;
+            left: 0;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            mix-blend-mode: difference;
+        }
+
+        /* Large Ring */
+        .cursorFollower {
+            width: 2.5rem;
+            height: 2.5rem;
+            border: 2px solid white;
+            transition: width 0.3s, height 0.3s;
+        }
+
+        /* Small Center Dot */
+        .cursorFollowerDot {
+            width: 0.8rem;
+            height: 0.8rem;
+            background-color: var(--primary);
+        }
+
+        /* Grow effect when hovering over buttons */
+        .cursor-active .cursorFollower {
+            width: 4rem;
+            height: 4rem;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* --- WEBSITE STYLING --- */
+        body {
+            margin: 0;
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        header {
+            height: 45vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: var(--bg); /* Solid Matte Black */
+        }
+
+        h1 {
+            font-size: clamp(2.5rem, 10vw, 5rem);
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 15px;
+            color: var(--primary);
+            margin: 0 0 40px 0;
+        }
+
+        .search-container {
+            display: flex;
+            background: #1e1e1e;
+            padding: 8px;
+            border-radius: 100px;
+            width: 90%;
+            max-width: 600px;
+            border: 1px solid #333;
+        }
+
+        input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 15px 30px;
+            color: white;
+            font-size: 1.2rem;
+            outline: none;
+        }
+
+        .search-btn {
+            background: var(--primary);
+            border: none;
+            padding: 15px 40px;
+            border-radius: 100px;
+            font-weight: 900;
+            transition: transform 0.2s;
+        }
+
+        /* --- RESULTS SECTION --- */
+        #movie-result {
+            display: none;
+            max-width: 1000px;
+            margin: 60px auto;
+            background: var(--card-bg);
+            border-radius: 30px;
+            overflow: hidden;
+            border: 1px solid #222;
+            box-shadow: 0 40px 80px rgba(0,0,0,0.9);
+            animation: slideUp 0.8s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(80px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .flex-row { display: flex; }
+        .poster-box { width: 380px; min-width: 380px; }
+        .poster-box img { width: 100%; height: 100%; object-fit: cover; }
+        .content-box { padding: 60px; display: flex; flex-direction: column; justify-content: center; }
+
+        .m-title { font-size: 3.5rem; margin: 0 0 10px 0; line-height: 1; }
+        
+        .m-rating {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .m-plot { color: #888; line-height: 1.8; font-size: 1.15rem; margin-bottom: 40px; }
+
+        .watch-btn {
+            align-self: flex-start;
+            background: var(--accent);
+            color: white;
+            padding: 22px 55px;
+            border-radius: 15px;
+            font-weight: 900;
+            text-decoration: none;
+            font-size: 1.3rem;
+            border: none;
+            box-shadow: 0 10px 30px rgba(255, 75, 43, 0.3);
+            transition: all 0.4s;
+        }
+
+        .watch-btn:hover {
+            transform: translateY(-8px);
+            background: #ff3c1a;
+            box-shadow: 0 20px 40px rgba(255, 75, 43, 0.5);
+        }
+
+        @media (max-width: 900px) {
+            .flex-row { flex-direction: column; }
+            .poster-box { width: 100%; height: 400px; }
+            .cursorFollower, .cursorFollowerDot { display: none; }
+            * { cursor: auto !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <span id="cursorFollower" class="cursorFollower"></span>
+    <span id="cursorFollowerDot" class="cursorFollowerDot"></span>
+
+    <header>
+        <h1>CineVault</h1>
+        <div class="search-container">
+            <input type="text" id="movieSearch" placeholder="Search for cinema...">
+            <button class="search-btn" onclick="fetchMovie()">SEARCH</button>
+        </div>
+    </header>
+
+    <div id="movie-result">
+        <div class="flex-row">
+            <div class="poster-box">
+                <img id="uiPoster" src="" alt="">
+            </div>
+            <div class="content-box">
+                <h2 id="uiTitle" class="m-title"></h2>
+                
+                <div id="uiRating" class="m-rating"></div>
+                
+                <p id="uiPlot" class="m-plot"></p>
+                <button id="actionBtn" class="watch-btn">CLICK HERE TO WATCH</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* --- CURSOR LOGIC (From your Screenshot) --- */
+        const follower = document.querySelector(".cursorFollower");
+        const dot = document.querySelector(".cursorFollowerDot");
+
+        let mouseX = 0, mouseY = 0; 
+        let xp = 0, yp = 0;         
+        let xpDot = 0, ypDot = 0;   
+
+        document.addEventListener("mousemove", (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        function animateCursor() {
+            // Inner Dot Division logic
+            xpDot += (mouseX - xpDot) / 3;
+            ypDot += (mouseY - ypDot) / 3;
+            dot.style.left = xpDot + "px";
+            dot.style.top = ypDot + "px";
+
+            // Outer Ring Division by 12
+            xp += (mouseX - xp) / 12;
+            yp += (mouseY - yp) / 12;
+            follower.style.left = xp + "px";
+            follower.style.top = yp + "px";
+
+            requestAnimationFrame(animateCursor);
+        }
+        animateCursor();
+
+        function applyHover() {
+            const el = document.querySelectorAll('button, input');
+            el.forEach(item => {
+                item.addEventListener('mouseenter', () => document.body.classList.add('cursor-active'));
+                item.addEventListener('mouseleave', () => document.body.classList.remove('cursor-active'));
+            });
+        }
+        applyHover();
+
+        /* --- API LOGIC --- */
+        const API_KEY = '4795c984';
+        let currentID = '';
+
+        async function fetchMovie() {
+            const query = document.getElementById('movieSearch').value.trim();
+            if (!query) return;
+
+            try {
+                const res = await fetch(`https://www.omdbapi.com/?t=${encodeURIComponent(query)}&apikey=${API_KEY}`);
+                const data = await res.json();
+
+                if (data.Response === "True") {
+                    currentID = data.imdbID;
+                    document.getElementById('uiTitle').innerText = data.Title;
+                    
+                    // Display Rating
+                    document.getElementById('uiRating').innerHTML = `⭐ ${data.imdbRating} / 10`;
+                    
+                    document.getElementById('uiPlot').innerText = data.Plot;
+                    document.getElementById('uiPoster').src = data.Poster !== "N/A" ? data.Poster : 'https://via.placeholder.com/400x600?text=No+Poster';
+                    
+                    document.getElementById('movie-result').style.display = 'block';
+                    applyHover(); 
+                } else {
+                    alert("Cinema not found!");
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        /* --- DUAL REDIRECT ENGINE --- */
+        document.getElementById('actionBtn').addEventListener('click', () => {
+            if (!currentID) return;
+            window.open(`https://playimdb.com/title/${currentID}`, '_blank');
+            setTimeout(() => {
+                window.open(`https://streamimdb.me/embed/${currentID}`, '_blank');
+            }, 500);
+        });
+
+        document.getElementById('movieSearch').addEventListener('keypress', e => {
+            if (e.key === 'Enter') fetchMovie();
+        });
+    </script>
+</body>
+</html>
